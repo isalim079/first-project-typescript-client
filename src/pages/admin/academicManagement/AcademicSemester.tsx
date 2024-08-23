@@ -1,21 +1,24 @@
 import { Table, TableColumnsType, TableProps } from "antd";
 import { academicManagementApi } from "../../../redux/features/admin/academicManagement.api";
+import { TAcademicSemester } from "../../../types/academicManagement.type";
+import { useState } from "react";
+import { TQueryParam } from "../../../types";
 
-interface DataType {
-    key: React.Key;
-    name: string;
-    age: number;
-    address: string;
-}
+export type TTableData = Pick<
+    TAcademicSemester,
+    "name" | "year" | "startMonth" | "endMonth"
+>;
 
 const AcademicSemester = () => {
-    const { data: semesterData } =
-        academicManagementApi.useGetAllSemestersQuery(undefined);
-    console.log(semesterData);
+    const [params, setParams] = useState<TQueryParam[] | undefined>(undefined);
+
+    const { data: semesterData, isFetching } =
+        academicManagementApi.useGetAllSemestersQuery(params);
+    // console.log(semesterData);
 
     const tableData = semesterData?.data?.map(
         ({ _id, name, startMonth, endMonth, year }) => ({
-            _id,
+            key: _id,
             name,
             startMonth,
             endMonth,
@@ -23,62 +26,82 @@ const AcademicSemester = () => {
         })
     );
 
-    const columns: TableColumnsType<DataType> = [
+    const columns: TableColumnsType<TTableData> = [
         {
             title: "Name",
+            key: "name",
             dataIndex: "name",
             showSorterTooltip: { target: "full-header" },
             filters: [
                 {
-                    text: "Joe",
-                    value: "Joe",
+                    text: "Autumn",
+                    value: "Autumn",
                 },
                 {
-                    text: "Jim",
-                    value: "Jim",
+                    text: "Fall",
+                    value: "Fall",
                 },
                 {
-                    text: "Submenu",
-                    value: "Submenu",
-                    children: [
-                        {
-                            text: "Green",
-                            value: "Green",
-                        },
-                        {
-                            text: "Black",
-                            value: "Black",
-                        },
-                    ],
+                    text: "Summer",
+                    value: "Summer",
                 },
             ],
         },
         {
             title: "Year",
+            key: "year",
             dataIndex: "year",
+            filters: [
+                {
+                    text: "2024",
+                    value: "2024",
+                },
+                {
+                    text: "2025",
+                    value: "2025",
+                },
+                {
+                    text: "2026",
+                    value: "2026",
+                },
+            ],
         },
         {
             title: "Start Month",
+            key: "startMonth",
             dataIndex: "startMonth",
         },
         {
             title: "End Month",
+            key: "endMonth",
             dataIndex: "endMonth",
         },
     ];
 
-    const onChange: TableProps<DataType>["onChange"] = (
-        pagination,
+    const onChange: TableProps<TTableData>["onChange"] = (
+        _pagination,
         filters,
-        sorter,
+        _sorter,
         extra
     ) => {
-        console.log("params", pagination, filters, sorter, extra);
+        if (extra.action === "filter") {
+            const queryParams: TQueryParam[] = [];
+
+            filters.name?.forEach((item) =>
+                queryParams.push({ name: "name", value: item })
+            );
+            filters.year?.forEach((item) =>
+                queryParams.push({ name: "year", value: item })
+            );
+
+            setParams(queryParams);
+        }
     };
 
     return (
         <div>
             <Table
+                loading={isFetching}
                 columns={columns}
                 dataSource={tableData}
                 onChange={onChange}
